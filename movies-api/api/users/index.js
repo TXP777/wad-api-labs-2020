@@ -14,15 +14,23 @@ router.post('/', async (req, res, next) => {
   if (!req.body.username || !req.body.password) {
     res.status(401).json({
       success: false,
-      msg: 'Please pass username and password.',
+      msg: 'Please pass username and password.'
     });
   }
   if (req.query.action === 'register') {
-    await User.create(req.body).catch(next);
-    res.status(201).json({
-      code: 201,
-      msg: 'Successful created new user.',
-    });
+    const passFormat=/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{5,}$/;
+    if(!passFormat.test(req.body.password)){
+      res.status(401).json({
+        code:401,
+        msg:'Bad Password!'
+      });
+    }else{
+      await User.create(req.body).catch(next);
+      res.status(201).json({
+        code: 201,
+        msg: 'Successful created new user.'
+      });
+    }
   } else {
     const user = await User.findByUserName(req.body.username).catch(next);
       if (!user) return res.status(401).json({ code: 401, msg: 'Authentication failed. User not found.' });
@@ -58,13 +66,25 @@ router.put('/:id',  (req, res,next) => {
 
 //Add a favourite. No Error Handling Yet. Can add duplicates too!
 router.post('/:userName/favourites', async (req, res, next) => {
+  try{
   const newFavourite = req.body.id;
   const userName = req.params.userName;
   const movie = await movieModel.findByMovieDBId(newFavourite);
   const user = await User.findByUserName(userName);
-  await user.favourites.push(movie._id);
-  await user.save(); 
-  res.status(201).json(user); 
+  if(user.favourites.indexOf(movie._id) !== -1){
+    res.status(401).json({
+      code:401,
+      msg:"This movie has been collected."
+    })
+  }else{
+    await user.favourites.push(movie._id);
+    await user.save(); 
+    res.status(201).json(user); 
+  } 
+  }catch(err){
+    next(err);
+  }
+ 
 });
 router.get('/:userName/favourites', (req, res, next) => {
   const userName = req.params.userName;
