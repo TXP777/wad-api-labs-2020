@@ -27,7 +27,7 @@ router.put('/:id',  (req, res,next) => {
 router.post('/:userName/favourites', (req, res, next) => {
   const newFavourite = req.body;
   const query = {username: req.params.userName};
-  if (newFavourite && newFavourite.id) {
+  if (newFavourite && newFavourite.id && newFavourite.title) {
     User.find(query).then(
       user => {
         (user.favourites)?user.favourites.push(newFavourite):user.favourites =[newFavourite];
